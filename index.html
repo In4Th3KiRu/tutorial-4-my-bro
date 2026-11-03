@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>DeepSeek Harness (DSH) 与 SuperAgent 零基础保姆级使用教程</title>
+  <meta name="description" content="基于 Bilibili 视频 BV1REx46NEc4 深度整理：50分钟吃透 DeepSeek Harness (DSH)，让 SuperAgent 替你全自动干活的零基础图文指南。" />
+  <style>
+    /* ==========================================================================
+       CSS Variables & Theme System
+       ========================================================================== */
+    :root, [data-theme="dark"] {
+      --bg-primary: #0b0f19;
+      --bg-secondary: #111827;
+      --bg-tertiary: #1e293b;
+      --bg-card: rgba(30, 41, 59, 0.65);
+      --bg-card-hover: rgba(30, 41, 59, 0.9);
+      --bg-code: #090d16;
+      --bg-glass: rgba(15, 23, 42, 0.82);
+
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --text-accent: #38bdf8;
+
+      --brand-primary: #3b82f6;
+      --brand-secondary: #6366f1;
+      --brand-cyan: #06b6d4;
+      --brand-emerald: #10b981;
+      --brand-amber: #f59e0b;
+      --brand-rose: #f43f5e;
+
+      --border-subtle: rgba(148, 163, 184, 0.14);
+      --border-focus: rgba(56, 189, 248, 0.45);
+      --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      --shadow-glow: 0 0 25px rgba(59, 130, 246, 0.18);
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --bg-card: rgba(255, 255, 255, 0.9);
+      --bg-card-hover: #ffffff;
+      --bg-code: #0f172a;
+      --bg-glass: rgba(255, 255, 255, 0.88);
+
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --text-accent: #2563eb;
+
+      --brand-primary: #2563eb;
+      --brand-secondary: #4f46e5;
+      --brand-cyan: #0891b2;
+      --brand-emerald: #059669;
+      --brand-amber: #d97706;
+      --brand-rose: #e11d48;
+
+      --border-subtle: rgba(15, 23, 42, 0.1);
+      --border-focus: rgba(37, 99, 235, 0.4);
+      --shadow-card: 0 8px 24px -6px rgba(15, 23, 42, 0.07);
+      --shadow-glow: 0 0 20px rgba(37, 99, 235, 0.1);
+    }
+
+    /* ==========================================================================
+       Base Reset & Responsive Typography
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 84px;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.75;
+      font-size: 16px;
+      overflow-x: hidden;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    code, pre, .mono {
+      font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, Monaco, "Courier New", monospace;
+    }
+
+    a {
+      color: var(--text-accent);
+      text-decoration: none;
+      transition: color 0.2s ease;
+      word-break: break-word;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    img, svg {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* ==========================================================================
+       Top Progress Bar & Header Navigation
+       ========================================================================== */
+    .reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--brand-primary), var(--brand-cyan), var(--brand-emerald));
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s ease-out;
+    }
+
+    .top-navbar {
+      position: sticky;
+      top: 0;
+      z-index: 900;
+      height: 64px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(1rem, 4vw, 2.5rem);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+      color: var(--text-primary);
+      text-decoration: none !important;
+      min-width: 0;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+
+    .brand-title-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-shrink: 0;
+    }
+
+    .btn-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      height: 38px;
+      padding: 0 0.85rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none !important;
+    }
+
+    .btn-icon:hover {
+      border-color: var(--border-focus);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+    }
+
+    .mobile-toc-btn {
+      display: none;
+    }
+
+    /* ==========================================================================
+       Main Layout Grid (Desktop Sidebar + Content, Mobile Single Column)
+       ========================================================================== */
+    .page-container {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: clamp(1.25rem, 3vw, 2.5rem) clamp(1rem, 3.5vw, 2rem);
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr);
+      gap: 2.5rem;
+      align-items: start;
+    }
+
+    /* Sidebar Navigation (Desktop Sticky, Mobile Drawer) */
+    .sidebar {
+      position: sticky;
+      top: 88px;
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 1.25rem 1rem;
+      box-shadow: var(--shadow-card);
+      scrollbar-width: thin;
+    }
+
+    .sidebar-header {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 0.85rem;
+      padding: 0 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toc-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .toc-link {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.5rem 0.65rem;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+      line-height: 1.4;
+      text-decoration: none !important;
+      transition: all 0.18s ease;
+      border-left: 3px solid transparent;
+    }
+
+    .toc-link:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .toc-link.active {
+      background: rgba(59, 130, 246, 0.12);
+      color: var(--text-accent);
+      border-left-color: var(--brand-primary);
+      font-weight: 600;
+    }
+
+    .toc-num {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      min-width: 1.5rem;
+    }
+
+    .toc-link.active .toc-num {
+      color: var(--text-accent);
+    }
+
+    .sidebar-meta {
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    /* Main Article Content */
+    .main-content {
+      min-width: 0; /* Critical to prevent CSS Grid blowout on mobile/pre blocks */
+      display: flex;
+      flex-direction: column;
+      gap: 2.25rem;
+    }
+
+    /* ==========================================================================
+       Hero Banner
+       ========================================================================== */
+    .hero-card {
+      position: relative;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.96));
+      border: 1px solid var(--border-focus);
+      border-radius: 18px;
+      padding: clamp(1.5rem, 4vw, 2.75rem);
+      box-shadow: var(--shadow-glow), var(--shadow-card);
+      overflow: hidden;
+      color: #f8fafc;
+    }
+
+    [data-theme="light"] .hero-card {
+      background: linear-gradient(135deg, #eff6ff 0%, #eef2ff 50%, #f0fdfa 100%);
+      color: #0f172a;
+    }
+
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.16);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.32);
+    }
+
+    [data-theme="light"] .tag-pill {
+      background: rgba(37, 99, 235, 0.1);
+      color: #1d4ed8;
+      border-color: rgba(37, 99, 235, 0.25);
+    }
+
+    .tag-pill.emerald {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    [data-theme="light"] .tag-pill.emerald {
+      color: #047857;
+    }
+
+    .hero-title {
+      font-size: clamp(1.5rem, 3.8vw, 2.35rem);
+      line-height: 1.3;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      letter-spacing: -0.01em;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(0.95rem, 2vw, 1.08rem);
+      color: var(--text-secondary);
+      max-width: 820px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-timeline-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 0.85rem;
+      margin-top: 1.25rem;
+    }
+
+    .phase-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .phase-box:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-focus);
+    }
+
+    .phase-time {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--brand-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .phase-name {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 0.2rem;
+    }
+
+    .phase-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* ==========================================================================
+       Chapter Sections & Content Cards
+       ========================================================================== */
+    .chapter-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: clamp(1.25rem, 3.5vw, 2.25rem);
+      box-shadow: var(--shadow-card);
+      min-width: 0;
+    }
+
+    .chapter-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .chapter-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      min-width: 0;
+    }
+
+    .chapter-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.82rem;
+      flex-shrink: 0;
+    }
+
+    .chapter-title {
+      font-size: clamp(1.2rem, 2.8vw, 1.55rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.35;
+    }
+
+    .chapter-duration {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: var(--bg-tertiary);
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .chapter-card h3 {
+      font-size: clamp(1.05rem, 2.2vw, 1.22rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 1.75rem 0 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .chapter-card h3:first-of-type {
+      margin-top: 0.5rem;
+    }
+
+    .chapter-card h3::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 1.1em;
+      background: var(--brand-primary);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .chapter-card p {
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .chapter-card ul, .chapter-card ol {
+      color: var(--text-secondary);
+      padding-left: 1.35rem;
+      margin-bottom: 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .chapter-card li strong {
+      color: var(--text-primary);
+    }
+
+    /* Inline code */
+    p code, li code, td code {
+      background: var(--bg-tertiary);
+      color: var(--text-accent);
+      padding: 0.15rem 0.42rem;
+      border-radius: 5px;
+      font-size: 0.87em;
+      border: 1px solid var(--border-subtle);
+      word-break: break-word;
+    }
+
+    /* ==========================================================================
+       Analogy & Callout Boxes (For Beginners)
+       ========================================================================== */
+    .callout {
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+      margin: 1.25rem 0;
+      border-left: 4px solid var(--brand-primary);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .callout-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .callout p:last-child {
+      margin-bottom: 0;
+    }
+
+    .callout.tip {
+      border-left-color: var(--brand-emerald);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .callout.warning {
+      border-left-color: var(--brand-amber);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .callout.danger {
+      border-left-color: var(--brand-rose);
+      background: rgba(244, 63, 94, 0.08);
+    }
+
+    /* ==========================================================================
+       Comparison Cards & Grids (Responsive)
+       ========================================================================== */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.15rem;
+      margin: 1.25rem 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+
+    .info-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .info-card-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .info-card p {
+      font-size: 0.9rem;
+      margin-bottom: 0;
+    }
+
+    /* ==========================================================================
+       Visual Architecture Diagram (Pure Responsive Flex/Grid)
+       ========================================================================== */
+    .arch-diagram {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: clamp(1rem, 3vw, 1.75rem);
+      margin: 1.5rem 0;
+    }
+
+    .arch-title {
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      letter-spacing: 0.04em;
+    }
+
+    .arch-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .arch-layer {
+      border: 1px dashed var(--border-focus);
+      border-radius: 12px;
+      padding: 1rem;
+      background: rgba(59, 130, 246, 0.04);
+    }
+
+    .arch-layer-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-accent);
+      margin-bottom: 0.65rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .arch-nodes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .arch-node {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.65rem 0.8rem;
+      font-size: 0.84rem;
+      text-align: center;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .arch-node span {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    .arch-arrow {
+      text-align: center;
+      color: var(--brand-cyan);
+      font-weight: 700;
+      font-size: 0.85rem;
+      line-height: 1.2;
+    }
+
+    /* ==========================================================================
+       Code Blocks with Copy Button (Mobile Scroll Safe)
+       ========================================================================== */
+    .code-wrapper {
+      position: relative;
+      margin: 1rem 0 1.4rem;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: var(--bg-code);
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.55rem 1rem;
+      background: rgba(30, 41, 59, 0.75);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+      color: #cbd5e1;
+      font-size: 0.78rem;
+    }
+
+    .code-lang {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .code-dots {
+      display: inline-flex;
+      gap: 5px;
+      margin-right: 4px;
+    }
+
+    .code-dots i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .code-dots i:nth-child(1) { background: #ef4444; }
+    .code-dots i:nth-child(2) { background: #f59e0b; }
+    .code-dots i:nth-child(3) { background: #10b981; }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #e2e8f0;
+      padding: 0.22rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .copy-btn:hover {
+      background: rgba(56, 189, 248, 0.25);
+      border-color: #38bdf8;
+    }
+
+    pre {
+      margin: 0;
+      padding: 1rem 1.15rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      color: #e2e8f0;
+      font-size: 0.88rem;
+      line-height: 1.65;
+    }
+
+    pre code {
+      background: none !important;
+      border: none !important;
+      padding: 0 !important;
+      color: inherit !important;
+      font-size: inherit !important;
+      white-space: pre;
+    }
+
+    .tok-comment { color: #64748b; font-style: italic; }
+    .tok-cmd { color: #38bdf8; font-weight: 600; }
+    .tok-flag { color: #a78bfa; }
+    .tok-str { color: #34d399; }
+
+    /* ==========================================================================
+       Step-by-Step Timeline List
+       ========================================================================== */
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin: 1.25rem 0;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.15rem;
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--brand-primary);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .step-body {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .step-title {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 1rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .step-body p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* ==========================================================================
+       Responsive Table Wrapper
+       ========================================================================== */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 1.25rem 0;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 540px;
+      background: var(--bg-secondary);
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    th {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ==========================================================================
+       Glossary & FAQ Accordion
+       ========================================================================== */
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    details.faq-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    details.faq-item summary {
+      padding: 1rem 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    details.faq-item summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.faq-item summary::after {
+      content: "+";
+      font-size: 1.25rem;
+      color: var(--text-accent);
+      font-weight: 700;
+      transition: transform 0.2s ease;
+    }
+
+    details.faq-item[open] summary::after {
+      content: "−";
+    }
+
+    .faq-content {
+      padding: 0 1.25rem 1.15rem;
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 0.9rem;
+    }
+
+    /* ==========================================================================
+       Footer
+       ========================================================================== */
+    .footer {
+      text-align: center;
+      padding: 2.5rem 1rem 3.5rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border-subtle);
+      margin-top: 2rem;
+    }
+
+    /* ==========================================================================
+       Mobile Drawer & Breakpoints (Zero Layout Shift / Misalignment)
+       ========================================================================== */
+    .backdrop-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(3px);
+      z-index: 940;
+    }
+
+    @media (max-width: 980px) {
+      .page-container {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.5rem;
+      }
+
+      .mobile-toc-btn {
+        display: inline-flex;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(300px, 84vw);
+        max-height: 100vh;
+        z-index: 950;
+        border-radius: 0 16px 16px 0;
+        background: var(--bg-secondary);
+        transform: translateX(-105%);
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        padding-top: 1.5rem;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .backdrop-overlay.open {
+        display: block;
+      }
+    }
+
+    @media (max-width: 600px) {
+      html {
+        scroll-padding-top: 74px;
+      }
+
+      .top-navbar {
+        height: 58px;
+        padding: 0 0.85rem;
+      }
+
+      .btn-icon span.btn-text-hide-sm {
+        display: none;
+      }
+
+      .hero-card {
+        padding: 1.25rem;
+        border-radius: 14px;
+      }
+
+      .chapter-card {
+        padding: 1.15rem;
+        border-radius: 14px;
+      }
+
+      .step-item {
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+
+      .arch-nodes {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Reading Progress Bar -->
+  <div class="reading-progress" id="readingProgress"></div>
+
+  <!-- Sticky Top Navigation -->
+  <header class="top-navbar">
+    <a href="#top" class="brand-logo">
+      <span class="brand-badge">DSH 教程</span>
+      <span class="brand-title-text">DeepSeek Harness &amp; SuperAgent 保姆级指南</span>
+    </a>
+    <div class="nav-actions">
+      <a href="https://www.bilibili.com/video/BV1REx46NEc4" target="_blank" rel="noopener noreferrer" class="btn-icon" title="前往 Bilibili 观看原视频 BV1REx46NEc4">
+        <span>📺</span>
+        <span class="btn-text-hide-sm">原视频 BV1REx46NEc4</span>
+      </a>
+      <button type="button" class="btn-icon" id="themeToggle" aria-label="切换深色或浅色模式">
+        <span id="themeIcon">☀️</span>
+        <span class="btn-text-hide-sm" id="themeText">浅色</span>
+      </button>
+      <button type="button" class="btn-icon mobile-toc-btn" id="mobileTocBtn" aria-label="打开章节目录">
+        <span>📑 目录</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Sidebar Backdrop -->
+  <div class="backdrop-overlay" id="backdropOverlay"></div>
+
+  <!-- Main Responsive Layout -->
+  <div class="page-container" id="top">
+
+    <!-- Sidebar Table of Contents -->
+    <aside class="sidebar" id="sidebarNav" aria-label="教程章节目录">
+      <div class="sidebar-header">
+        <span>📖 教程章节导航</span>
+        <span class="mono">50 MINS</span>
+      </div>
+      <ul class="toc-list" id="tocList">
+        <li><a href="#ch0" class="toc-link active"><span class="toc-num">00</span><span>零基础导读：什么是 Agent？</span></a></li>
+        <li><a href="#ch1" class="toc-link"><span class="toc-num">01</span><span>为什么我们需要 DSH 与 SuperAgent</span></a></li>
+        <li><a href="#ch2" class="toc-link"><span class="toc-num">02</span><span>核心架构：微内核与主管-专员模式</span></a></li>
+        <li><a href="#ch3" class="toc-link"><span class="toc-num">03</span><span>零基础环境搭建与 Web UI 启动</span></a></li>
+        <li><a href="#ch4" class="toc-link"><span class="toc-num">04</span><span>初体验：跑通你的第一个本地任务</span></a></li>
+        <li><a href="#ch5" class="toc-link"><span class="toc-num">05</span><span>重头戏：部署 SuperAgent 全自动干活</span></a></li>
+        <li><a href="#ch6" class="toc-link"><span class="toc-num">06</span><span>安全护栏：Observe 观察模式详解</span></a></li>
+        <li><a href="#ch7" class="toc-num-wrap toc-link"><span class="toc-num">07</span><span>进阶技巧、常用命令与避坑排错</span></a></li>
+        <li><a href="#ch8" class="toc-link"><span class="toc-num">08</span><span>新手高频黑话词典 &amp; 常见问题</span></a></li>
+      </ul>
+      <div class="sidebar-meta">
+        <div>🎬 对应视频：<strong>BV1REx46NEc4</strong></div>
+        <div style="margin-top:4px;">🎯 适用人群：零基础小白 / 开发者</div>
+      </div>
+    </aside>
+
+    <!-- Main Tutorial Content -->
+    <main class="main-content">
+
+      <!-- Hero Banner -->
+      <section class="hero-card">
+        <div class="hero-tags">
+          <span class="tag-pill">🎬 B站热门教程 BV1REx46NEc4 深度精编</span>
+          <span class="tag-pill emerald">🌱 零基础友好 · 手把手教学</span>
+        </div>
+        <h1 class="hero-title">【全网最全】50分钟吃透 DeepSeek Harness (DSH)<br />让 SuperAgent 替你全自动干活！</h1>
+        <p class="hero-subtitle">
+          如果你从来没接触过 <strong>AI Agent（智能体）</strong>，觉得那些黑框命令行和高深术语遥不可及——别担心！本教程用最通俗的“大白话 + 公司职场比喻”，带你从零理解并亲手搭建 DeepSeek 官方开源的 <strong>DeepSeek Harness (DSH)</strong>，雇佣一个 7×24 小时不知疲倦的数字员工团队。
+        </p>
+
+        <div class="hero-timeline-bar">
+          <div class="phase-box">
+            <div class="phase-time">Phase 1 · 00:00 - 10:00</div>
+            <div class="phase-name">破除迷雾：认知与原理</div>
+            <div class="phase-desc">听懂 Agent、DSH 挽具底座与“一切皆插件”</div>
+          </div>
+          <div class="phase-box">
+            <div class="phase-time">Phase 2 · 10:00 - 25:00</div>
+            <div class="phase-name">零基础极速上手</div>
+            <div class="phase-desc">一行命令拉起 Web 界面，配置模型跑通任务</div>
+          </div>
+          <div class="phase-box">
+            <div class="phase-time">Phase 3 · 25:00 - 40:00</div>
+            <div class="phase-name">部署 SuperAgent 团队</div>
+            <div class="phase-desc">Router 主管 + Worker 专员，不艾特也能主动干活</div>
+          </div>
+          <div class="phase-box">
+            <div class="phase-time">Phase 4 · 40:00 - 50:00</div>
+            <div class="phase-name">安全护栏与排错指南</div>
+            <div class="phase-desc">Observe 观察模式、权限隔离与 dsh doctor 急救</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           Chapter 00: 零基础导读
+           ==================================================================== -->
+      <section class="chapter-card" id="ch0">
+        <div class="chapter-header">
+          <div class="chapter-title-group">
+            <span class="chapter-badge">第 00 章</span>
+            <h2 class="chapter-title">零基础导读：3分钟看懂什么是 AI Agent 和 DSH</h2>
+          </div>
+          <span class="chapter-duration">⏱️ 视频 00:00 - 05:00</span>
+        </div>
+
+        <p>
+          很多朋友平时用过网页版的 DeepSeek 或 ChatGPT，你问它一个问题，它给你回复一段话。那为什么大家都在聊 <strong>Agent（智能体）</strong> 和 <strong>DeepSeek Harness (DSH)</strong> 呢？我们用一个最直观的生活比喻来解释：
+        </p>
+
+        <div class="grid-3">
+          <div class="info-card">
+            <div class="info-card-title">🧠 1. 大模型 (LLM) = 军师的大脑</div>
+            <p>
+              网页版聊天框里的 AI 就像一个<strong>被关在玻璃房里的智囊军师</strong>。他博古通今，能给你出主意、写代码草稿，但他<strong>没有手脚</strong>，没法帮你打开电脑文件夹，也没法替你把代码运行起来测试。
+            </p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">🤖 2. 智能体 (Agent) = 有手有脚的实习生</div>
+            <p>
+              当我们给“大脑”装上<strong>双手和工具</strong>（比如允许它读写电脑文件、打开浏览器查资料、运行终端命令），它就进化成了 <strong>Agent</strong>。你只需说一句“帮我做个贪吃蛇网页并测试通过”，它就能自己动手干完。
+            </p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">🛠️ 3. Harness (DSH) = 实习生的现代化办公桌</div>
+            <p>
+              <strong>Harness</strong> 英文原意是“挽具/装备挂具”。<strong>DeepSeek Harness (DSH)</strong> 就是 DeepSeek 官方打造的<strong>智能体运行底座</strong>——它给 AI 准备好了工位、工具箱、安全门禁和工作日志，让 AI 能稳稳当当地干活。
+            </p>
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <div class="callout-title">💡 一句话总结 DSH 是什么</div>
+          <p>
+            以前你想让 AI 帮你自动改文件、跑程序，需要自己写一堆复杂的代码把大模型和电脑工具拼起来；现在有了 <strong>DeepSeek Harness (DSH)</strong>，DeepSeek 官方直接把这套“办公系统”做好了开源给你，你只需要填入 API Key（通行证），就能立刻拥有一个能操作电脑帮你干活的 AI 助手！
+          </p>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           Chapter 01: 痛点与为什么需要 SuperAgent
+           ==================================================================== -->
+      <section class="chapter-card" id="ch1">
+        <div class="chapter-header">
+          <div class="chapter-title-group">
+            <span class="chapter-badge">第 01 章</span>
+            <h2 class="chapter-title">告别“会话焦虑”：为什么我们需要 SuperAgent？</h2>
+          </div>
+          <span class="chapter-duration">⏱️ 视频 05:00 - 12:00</span>
+        </div>
+
+        <p>
+          既然普通的 Agent（比如各类 AI 编程助手）已经能动手干活了，为什么视频里还要重点介绍 <strong>SuperAgent（超级智能体）</strong> 呢？因为普通的 Agent 存在三个让人头疼的<strong>“临时工痛点”</strong>：
+        </p>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>对比维度</th>
+                <th>传统单会话 Agent（普通临时工）</th>
+                <th>DSH SuperAgent（全职金牌团队）</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>触发方式</strong></td>
+                <td><strong>极度被动</strong>：算盘珠子拨一下动一下，你不找它说话，它永远在睡觉。</td>
+                <td><strong>主动巡检</strong>：7×24小时盯紧项目仓库或飞书群，发现新任务或 Bug 自动接单处理。</td>
+              </tr>
+              <tr>
+                <td><strong>多任务能力</strong></td>
+                <td><strong>Session（会话）焦虑</strong>：同时开 4 个窗口聊不同任务，人眼花缭乱，窗口之间还互相失忆。</td>
+                <td><strong>并行分身</strong>：来 5 个任务就自动派出 5 个独立专员（Worker）在各自沙箱里并行干活。</td>
+              </tr>
+              <tr>
+                <td><strong>记忆与变慢问题</strong></td>
+                <td><strong>上下文污染</strong>：在一个窗口里聊太久，AI 脑子越来越慢、还容易把 A 任务和 B 任务搞混。</td>
+                <td><strong>脑手分离</strong>：主管只管派单不存垃圾草稿，专员干完活交完报告就销毁临时草稿，永远清爽飞快。</td>
+              </tr>
+              <tr>
+                <td><strong>边界感</strong></td>
+                <td>每做一步都要弹窗问你“行不行”，频繁打断你的注意力。</td>
+                <td><strong>少占用人类注意力</strong>：不确定的事绝不乱改，干完活整理成标准工单（PR）等你喝着咖啡审批。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           Chapter 02: 核心架构解析
+           ==================================================================== -->
+      <section class="chapter-card" id="ch2">
+        <div class="chapter-header">
+          <div class="chapter-title-group">
+            <span class="chapter-badge">第 02 章</span>
+            <h2 class="chapter-title">核心架构拆解：“一切皆插件”与“主管 + 专员”模式</h2>
+          </div>
+          <span class="chapter-duration">⏱️ 视频 12:00 - 18:00</span>
+        </div>
+
+        <h3>1. DSH 底座哲学：Everything is a Plugin（一切皆插件）</h3>
+        <p>
+          DeepSeek Harness 底层基于轻量级的 <strong>Cordis 微内核框架</strong> 构建。你可以把 DSH 想象成一套<strong>乐高积木底板</strong>：
+        </p>
+        <ul>
+          <li><strong>大模型大脑（LlmAdapter）</strong> 是块积木，随时可以切换 DeepSeek-V3、DeepSeek-R1 或其他兼容模型；</li>
+          <li><strong>工具手脚（Tools &amp; Skills）</strong> 是块积木，比如读写文件、执行命令行、查网页；</li>
+          <li><strong>操作界面（Web UI / CLI）</strong> 和 <strong>聊天历史（Session Log）</strong> 也全都是积木插件！</li>
+          <li>通过一个叫 <strong>Profile（配置文件套餐）</strong> 的清单，你可以一键决定今天给 AI 组装哪些积木。</li>
+        </ul>
+
+        <h3>2. SuperAgent 灵魂设计：Router（项目主管）+ Worker（执行专员）</h3>
+        <p>
+          为了解决多任务混乱，DSH SuperAgent 把一个臃肿的 AI 拆成了<strong>两层默契配合的职场角色</strong>。请看下方的直观架构流转图：
+        </p>
+
+        <div class="arch-diagram" role="region" aria-label="SuperAgent Router与Worker架构示意图">
+          <div class="arch-title">📊 DSH SUPERAGENT 全自动工作流转图（脑手分离设计）</div>
+          <div class="arch-flow">
+            <div class="arch-layer">
+              <div class="arch-layer-label">
+                <span>📡 第一层：外部消息与事件源（Triggers）</span>
+                <span>人类日常沟通的地方</span>
+              </div>
+              <div class="arch-nodes">
+                <div class="arch-node">GitHub Issues<span>有人提了新需求/Bug</span></div>
+                <div class="arch-node">Pull Requests<span>代码审查意见与评论</span></div>
+                <div class="arch-node">飞书 / IM 机器人<span>群聊里呼叫或派发任务</span></div>
+              </div>
+            </div>
+
+            <div class="arch-arrow">⬇ 实时监听 &amp; 安全过滤（外部评论绝不能篡改系统权限） ⬇</div>
+
+            <div class="arch-layer">
+              <div class="arch-layer-label">
+                <span>👔 第二层：Router 主管层（全域协调员）</span>
+                <span>永远在线 · 绝不亲自写代码</span>
+              </div>
+              <div class="arch-nodes">
+                <div class="arch-node">意图判断与合并<span>判断要不要接单、合并重复消息</span></div>
+                <div class="arch-node">创建工单 (Ticket)<span>为每个独立任务建档追踪</span></div>
+                <div class="arch-node">统一对外汇报<span>等专员干完活，统一回复人类</span></div>
+              </div>
+            </div>
+
+            <div class="arch-arrow">⬇ 按工单派发给独立隔离的专员（并行不串线） ⬇</div>
+
+            <div class="arch-layer">
+              <div class="arch-layer-label">
+                <span>👷 第三层：Worker 专员层（闷头干活的实干家）</span>
+                <span>独立文件夹 · 满配工具箱</span>
+              </div>
+              <div class="arch-nodes">
+                <div class="arch-node">Worker #1 (修 Bug)<span>独立拉取代码 → 跑测试 → 提交修复</span></div>
+                <div class="arch-node">Worker #2 (写文档)<span>阅读源码 → 补充 README → 提 PR</span></div>
+                <div class="arch-node">Worker #N (新功能)<span>互不干扰，干完即回收临时环境</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title">🎯 为什么说“Router 不配写代码的工具”是神来之笔？</div>
+          <p>
+            如果主管（Router）自己下场去改代码、跑漫长的测试，那在它忙活的这 10 分钟里，其他人发来的消息就没人理了！所以 DSH 故意收走了 Router 的执行工具，让它<strong>只做轻量级的判断和派单</strong>，1 秒钟就能响应任何突发消息，脏活累活全交给后台的 Worker 专员去并行处理。
+          </p>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           Chapter 03: 环境准备与一键启动
+           ==================================================================== -->
+      <section class="chapter-card" id="ch3">
+        <div class="chapter-header">
+          <div class="chapter-title-group">
+            <span class="chapter-badge">第 03 章</span>
+            <h2 class="chapter-title">零基础环境搭建：3步拉起可视化 Web 控制台</h2>
+          </div>
+          <span class="chapter-duration">⏱️ 视频 18:00 - 25:00</span>
+        </div>
+
+        <p>
+          不要被“开源框架”四个字吓到！DSH 提供了<strong>免下载源码、一行命令直接启动网页界面</strong>的方式。哪怕你完全不懂编程，跟着下面 3 步也能在 5 分钟内跑起来。
+        </p>
+
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">检查并安装 Node.js 运行环境</div>
+              <p>
+                DSH 是基于现代 Node.js 运行的。请确保你的电脑安装了 <strong>Node.js 22.19.0 及以上版本（或 Node.js 24+）</strong>。
+                打开你电脑上的终端（Windows 搜 <code>PowerShell</code> 或 <code>CMD</code>，Mac 搜 <code>终端 / Terminal</code>），输入以下命令检查版本：
+              </p>
+              <div class="code-wrapper">
+                <div class="code-header">
+                  <span class="code-lang"><span class="code-dots"><i></i><i></i><i></i></span>Terminal / 终端</span>
+                  <button class="copy-btn" onclick="copyCode(this)">复制命令</button>
+                </div>
+                <pre><code><span class="tok-comment"># 查看当前 Node.js 版本（若显示 v22.19+ 或 v24+ 即为合格）</span>
+<span class="tok-cmd">node</span> <span class="tok-flag">-v</span></code></pre>
+              </div>
+              <p>
+                <em>提示：如果提示找不到命令或版本太低，直接去 <a href="https://nodejs.org/" target="_blank" rel="noopener">Node.js 官网 (nodejs.org)</a> 下载最新的 LTS 安装包，像装微信一样一路点击“下一步”即可。</em>
+              </p>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">一行命令启动 DSH Web UI（零源码安装版）</div>
+              <p>
+                不需要去 GitHub 下载几百兆的代码压缩包！直接在终端里运行下面这行神奇的命令，它会自动拉取官方最新版的 DSH 并启动网页控制台：
+              </p>
+              <div class="code-wrapper">
+                <div class="code-header">
+                  <span class="code-lang"><span class="code-dots"><i></i><i></i><i></i></span>Terminal / 一键启动 Web 界面</span>
+                  <button class="copy-btn" onclick="copyCode(this)">复制命令</button>
+                </div>
+                <pre><code><span class="tok-cmd">npx</span> @deepseek-ai/dsh web</code></pre>
+              </div>
+              <p>
+                看到终端输出类似 <code>Server listening at http://127.0.0.1:3080</code> 的提示后，打开你的浏览器（Chrome / Edge / Safari），在地址栏输入并访问：<br />
+                👉 <strong><code>http://127.0.0.1:3080</code></strong>
+              </p>
+            </div>
+          </div>
+
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <div class="step-title">开发者可选：从源码克隆构建（如果你想自己改插件）</div>
+              <p>
+                如果你是程序员，想深入研究 DSH 源码或编写自定义插件，可以使用 <code>git</code> 和 <code>pnpm</code> 从源码启动（纯新手可直接跳过这一步）：
+              </p>
+              <div class="code-wrapper">
+                <div class="code-header">
+                  <span class="code-lang"><span class="code-dots"><i></i><i></i><i></i></span>Bash / 源码构建方式</span>
+                  <button class="copy-btn" onclick="copyCode(this)">复制命令</button>
+                </div>
+                <pre><code><span class="tok-cmd">git</span> clone https://github.com/deepseek-ai/deepseek-harness.git
+<span class="tok-cmd">cd</span> deepseek-harness
+<span class="tok-cmd">pnpm</span> install
+<span class="tok-cmd">pnpm</span> run build
+<span class="tok-cmd">pnpm</span> dsh web</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           Chapter 04: 初体验：配置模型与跑通第一个任务
+           ==================================================================== -->
+      <section class="chapter-card" id="ch4">
+        <div class="chapter-header">
+          <div class="chapter-title-group">
+            <span class="chapter-badge">第 04 章</span>
+            <h2 class="chapter-title">Web UI 初体验：填入钥匙，让 AI 替你干第一票活</h2>
+          </div>
+          <span class="chapter-duration">⏱️ 视频 25:00 - 31:00</span>
+        </div>
+
+        <p>
+          打开 <code>http://127.0.0.1:3080</code> 后，你会看到一个非常清爽的现代化界面。新手第一次进来常问：<strong>“为什么下面的聊天输入框是锁住的，不能打字？”</strong> 别慌，只需完成以下两步初始化：
+        </p>
+
+        <h3>第一步：选择工作目录（Choose Workspace）</h3>
+        <p>
+          因为 Agent 是要帮你读写电脑文件的，你得先告诉它<strong>“在哪张办公桌上干活”</strong>。
+        </p>
+        <ul>
+          <li>点击界面上的 <strong><code>Choose workspace</code>（选择工作区）</strong> 按钮；</li>
+          <li>在电脑上新建一个专门用来测试的空文件夹（比如 <code>D:\dsh-demo</code> 或 <code>~/dsh-demo</code>）并选中它；</li>
+          <li>选中后，底部的任务输入框就会立刻解锁！</li>
+        </ul>
+
+        <h3>第二步：配置 DeepSeek API Key（给大脑通电）</h3>
+        <ul>
+          <li>点击左下角或侧边栏的 <strong><code>Settings（设置）</code> → <code>Models（模型）</code></strong>；</li>
+          <li>填入你在 <a href="https://platform.deepseek.com/" target="_blank" rel="noopener">DeepSeek 开放平台</a> 申请的 <code>API Key</code>（以 <code>sk-</code> 开头的一串密钥）；</li>
+          <li>点击保存。密钥会被安全地保存在你本地的 <code>$DSH_HOME/.credentials.yaml</code> 中，<strong>无需重启服务，立即生效！</strong></li>
+        </ul>
+
+        <h3>第三步：下达你的第一个实操指令！</h3>
+        <p>
+          现在回到主界面创建一个新会话（Session），复制下面这段话发给它，亲眼看看它是怎么自己动手的：
+        </p>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang"><span class="code-dots"><i></i><i></i><i></i></span>Prompt / 复制这段话发给 DSH</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制提示词</button>
+          </div>
+          <pre><code>请在当前工作目录下帮我创建一个单文件的个人番茄钟待办清单网页（index.html），要求界面美观现代，支持深色模式和倒计时提醒，写完后帮我检查一下代码语法有没有错误。</code></pre>
+        </div>
+        <p>
+          你会看到 DSH 在界面上一步步展示它的思考过程（Turn / Step）：它会自动调用文件写入工具创建 <code>index.html</code>，自动运行检查命令，最后向你汇报完成！
+        </p>
+      </section>
+
+      <!-- ====================================================================
+           Chapter 05: 核心重头戏：部署 SuperAgent
+           ==================================================================== -->
+      <section class="chapter-card" id="ch5">
+        <div class="chapter-header">
+          <div class="chapter-title-group">
+            <span class="chapter-badge">第 05 章</span>
+            <h2 class="chapter-title">核心重头戏：部署 SuperAgent，开启 7×24 自动打工</h2>
+          </div>
+          <span class="chapter-duration">⏱️ 视频 31:00 - 42:00</span>
+        </div>
+
+        <p>
+          前面体验的是你在网页里跟它一对一交流。接下来就是本视频最精彩的部分：安装 <strong><code>dsh-superagent</code>（超级智能体原型包）</strong>，把它接入 GitHub 仓库或飞书，让它实现<strong>“不被 @ 也能主动帮你提 PR 干活”</strong>！
+        </p>
+
+        <div class="callout warning">
+          <div class="callout-title">🖥️ SuperAgent 运行环境小贴士</div>
+          <p>
+            因为 SuperAgent 需要在后台开启多个独立终端（使用 <code>tmux</code>）来管理并行干活的 Worker 专员，并调用 GitHub 工具（<code>gh</code>），官方推荐在 <strong>macOS、Linux 或 Windows 的 WSL2（Linux 子系统）</strong> 环境中运行完整版 SuperAgent，并确保已安装：<code>git (&gt;=2.32)</code>、<code>tmux</code>、<code>python3</code> 和 <code>gh (GitHub CLI &gt;=2.48)</code>。
+          </p>
+        </div>
+
+        <h3>方式 A：通过 DSH 插件命令挂载 SuperAgent</h3>
+        <p>
+          在 DSH 中，SuperAgent 本质上也是一个插件包（Bundle）。你可以通过命令行将它添加到指定的配置档案（Profile）中：
+        </p>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang"><span class="code-dots"><i></i><i></i><i></i></span>Bash / 安装 SuperAgent 插件包</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制命令</button>
+          </div>
+          <pre><code><span class="tok-comment"># 将 dsh-superagent 插件挂载到 web profile（或独立的 superagent profile）</span>
+<span class="tok-cmd">dsh</span> plugin <span class="tok-flag">--profile</span> web add dsh-superagent</code></pre>
+        </div>
+        <p>
+          <em>💡 视频避坑提示：首次挂载启动时如果看到终端返回 <code>exit 3</code>，<strong>千万别慌，这不是报错坏了！</strong> 这是因为 SuperAgent 还在等待你完成初始的账号绑定与基础配置。</em>
+        </p>
+
+        <h3>方式 B：超酷的“让 AI 帮你安装 AI”（交互式向导安装）</h3>
+        <p>
+          <code>dsh-superagent-prototype</code> 仓库做了一个极其贴心的设计：你完全不用自己去啃复杂的配置文件，仓库里的 <code>SETUP.md</code> 就是一份写给 AI 看的安装说明书！
+        </p>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang"><span class="code-dots"><i></i><i></i><i></i></span>Bash / 克隆原型仓库并交给 Agent 自动配置</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制命令</button>
+          </div>
+          <pre><code><span class="tok-comment"># 1. 克隆官方 SuperAgent 原型仓库</span>
+<span class="tok-cmd">git</span> clone https://github.com/deepseek-ai/dsh-superagent-prototype.git
+<span class="tok-cmd">cd</span> dsh-superagent-prototype
+
+<span class="tok-comment"># 2. 在 DSH 会话中直接对 Agent 发送下面这句话：</span>
+<span class="tok-str">"Read SETUP.md in this repository and set up dsh-superagent with me."</span>
+<span class="tok-comment"># （请阅读本仓库的 SETUP.md 并一步步引导我完成 SuperAgent 配置）</span></code></pre>
+        </div>
+        <p>
+          发送这句话后，Agent 会自动检测你电脑上的软件环境，然后像聊天一样每次只问你一个简单问题（例如：“你想绑定哪个 GitHub 测试仓库？”），最后自动帮你生成所有隔离配置！
+        </p>
+
+        <h3>Web 面板三大核心控制页（Control Center）</h3>
+        <p>
+          启动后，在本地 Web 控制面板的 SuperAgent 侧边栏里，你会看到三个清晰的管理标签页：
+        </p>
+        <div class="grid-3">
+          <div class="info-card">
+            <div class="info-card-title">🔗 1. Sources（消息源）</div>
+            <p>绑定你要监控的 <strong>GitHub 仓库</strong>、配置专属的 Bot 机器人账号，以及按需接入<strong>飞书机器人通道</strong>。</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">🛡️ 2. Policy（权限与策略）</div>
+            <p>设置<strong>白名单（Allowlist）</strong>：明确哪些同事的指令可以触发任务，以及设置自动接单的模式（<code>off</code> / <code>observe</code> / <code>auto</code>）。</p>
+          </div>
+          <div class="info-card">
+            <div class="info-card-title">⚙️ 3. Execution（执行空间）</div>
+            <p>管理 Worker 专员的<strong>独立工作目录</strong>、最大同时处理的工单数量（并发数），以及终端命令的安全规则。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           Chapter 06: 安全护栏与 Observe 观察模式
+           ==================================================================== -->
+      <section class="chapter-card" id="ch6">
+        <div class="chapter-header">
+          <div class="chapter-title-group">
+            <span class="chapter-badge">第 06 章</span>
+            <h2 class="chapter-title">安全第一：新手必看的“Observe 观察模式”与权限隔离</h2>
+          </div>
+          <span class="chapter-duration">⏱️ 视频 42:00 - 46:00</span>
+        </div>
+
+        <p>
+          很多新手听到“AI 自动改代码、自动提 PR”心里会打鼓：<strong>万一它曲解了别人的评论，把我的代码库改乱了怎么办？或者有陌生人在 GitHub 评论区注入恶意指令骗 AI 删库怎么办？</strong>
+        </p>
+        <p>
+          视频中特别强调了 DeepSeek 团队在安全上的两大硬核设计：
+        </p>
+
+        <h3>1. 铁律：上下文输入 ≠ 权限变更</h3>
+        <p>
+          在 DSH SuperAgent 中，外部路人的评论、不受信任的群消息，只会被当作普通的“参考文本”，<strong>绝不可能提升或改变 Agent 的执行权限</strong>。此外，系统会自动生成专用的命令垫片（<code>worker-bin</code> 和独立的 <code>worker-gitconfig</code>），确保 Worker 只能使用机器人自己的受限凭证，绝不会偷用你电脑上的个人最高权限账号。
+        </p>
+
+        <h3>2. 官方强烈推荐：先开 2 周 <code>observe</code>（观察模式）！</h3>
+        <p>
+          在 Policy（策略）设置中，SuperAgent 提供了三种自动接单模式。<strong>千万不要一上来就开全自动！</strong>
+        </p>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>模式名称</th>
+                <th>形象比喻</th>
+                <th>具体行为说明</th>
+                <th>适用阶段</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>off</code>（关闭主动接单）</td>
+                <td>只听点名</td>
+                <td>只有白名单里的人明确 @ 呼叫它时才干活，平时绝不主动揣测接单。</td>
+                <td>刚安装完的第一天调试期</td>
+              </tr>
+              <tr>
+                <td><strong><code>observe</code>（观察模式）⭐</strong></td>
+                <td><strong>实习生写演练笔记</strong></td>
+                <td>后台正常监控所有事件，并在日志里写下<strong>“如果让我干，我会接哪个单、派哪个专员怎么做”</strong>，但<strong>不真正动手改代码</strong>。</td>
+                <td><strong>强烈推荐前 1~2 周使用！</strong> 人工核对它的判断靠谱后再升级</td>
+              </tr>
+              <tr>
+                <td><code>auto</code>（全自动模式）</td>
+                <td>正式员工全面上岗</td>
+                <td>看到符合条件的 Issue、报错或任务，自动建工单、派 Worker 改代码并提交 PR 等你审核。</td>
+                <td>观察期表现优异、团队完全信任后</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           Chapter 07: 进阶命令速查与避坑指南
+           ==================================================================== -->
+      <section class="chapter-card" id="ch7">
+        <div class="chapter-header">
+          <div class="chapter-title-group">
+            <span class="chapter-badge">第 07 章</span>
+            <h2 class="chapter-title">进阶技巧：常用 CLI 命令速查表与避坑指南</h2>
+          </div>
+          <span class="chapter-duration">⏱️ 视频 46:00 - 50:00</span>
+        </div>
+
+        <h3>1. 遇到报错怎么办？先敲 <code>dsh doctor</code>！</h3>
+        <p>
+          如果在配置插件、网络代理、API 密钥或权限时遇到任何奇怪的报错，不要自己盲目乱改文件，优先在终端里运行官方自带的“全科医生诊断工具”：
+        </p>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang"><span class="code-dots"><i></i><i></i><i></i></span>Terminal / 一键健康检查与故障诊断</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制命令</button>
+          </div>
+          <pre><code><span class="tok-cmd">dsh</span> doctor</code></pre>
+        </div>
+        <p>
+          它会自动帮你体检 Node 版本、网络连通性、API Key 格式以及沙箱目录权限，并直接告诉你哪一项没通过、该怎么修。
+        </p>
+
+        <h3>2. DSH 黄金命令速查表（建议收藏）</h3>
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span class="code-lang"><span class="code-dots"><i></i><i></i><i></i></span>Bash / DSH 常用命令大全</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制命令</button>
+          </div>
+          <pre><code><span class="tok-comment"># 1. 启动可视化 Web 界面（最常用）</span>
+<span class="tok-cmd">npx</span> @deepseek-ai/dsh web
+
+<span class="tok-comment"># 2. 无界面模式（Headless）：在终端一句话让 AI 干完活自动退出</span>
+<span class="tok-cmd">dsh</span> <span class="tok-flag">--profile</span> headless <span class="tok-str">"帮我总结当前项目的目录结构并生成说明文档"</span>
+
+<span class="tok-comment"># 3. 安装社区或官方插件（支持 GitHub 仓库或 npm 包）</span>
+<span class="tok-cmd">dsh</span> plugin add github:owner/repo
+
+<span class="tok-comment"># 4. 调试神器：打印当前最终生效的完整插件与配置树</span>
+<span class="tok-cmd">dsh</span> <span class="tok-flag">--profile</span> web <span class="tok-flag">--dump-config</span>
+
+<span class="tok-comment"># 5. 叠加临时配置补丁（不破坏原有 Profile 配置）</span>
+<span class="tok-cmd">dsh</span> <span class="tok-flag">--profile</span> web <span class="tok-flag">--patch</span> ./my-custom-override.yaml</code></pre>
+        </div>
+
+        <div class="callout danger">
+          <div class="callout-title">⚠️ 生产环境安全边界提醒</div>
+          <p>
+            虽然 DSH 提供了 Sandbox（沙箱）、Approval（人工审批）和 Permission（权限控制）机制，但官方明确提醒：<strong>应用层沙箱并不等同于虚拟机级别的绝对硬件隔离</strong>。如果你让 SuperAgent 7×24 小时无人值守运行，强烈建议<strong>在独立的操作系统普通用户账号（Dedicated OS User）或 Docker 容器/测试服务器中运行</strong>，切勿在存有核心商业机密私钥的主力管理员账号下裸奔！
+          </p>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           Chapter 08: 新手黑话词典与 FAQ
+           ==================================================================== -->
+      <section class="chapter-card" id="ch8">
+        <div class="chapter-header">
+          <div class="chapter-title-group">
+            <span class="chapter-badge">第 08 章</span>
+            <h2 class="chapter-title">附录：新手高频“技术黑话”翻译词典 &amp; 常见问题</h2>
+          </div>
+          <span class="chapter-duration">📚 随时查阅</span>
+        </div>
+
+        <p>
+          为了确保从来没用过 Agent 的朋友在看视频或看官方文档时不再一头雾水，这里把所有容易卡壳的英文词翻译成了大白话：
+        </p>
+
+        <div class="faq-list">
+          <details class="faq-item" open>
+            <summary>📖 什么是 Profile / Bundle / Cordis？（架构三剑客）</summary>
+            <div class="faq-content">
+              <ul>
+                <li><strong>Cordis</strong>：DSH 底层的“插线板底座”，负责把各个功能插件通电连接起来。</li>
+                <li><strong>Bundle（插件包）</strong>：打包好的一组技能套餐。比如“网页版套餐”包含界面和基础工具，“SuperAgent 套餐”包含主管和专员。</li>
+                <li><strong>Profile（配置档案）</strong>：你给 AI 保存的“上岗身份卡”。比如你可以建一个叫 <code>web</code> 的档案平时自己聊天用，再建一个叫 <code>superagent</code> 的档案专门挂机干活，两者互不干扰。</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>📖 什么是 Session / Turn / Step / Context？</summary>
+            <div class="faq-content">
+              <ul>
+                <li><strong>Session（会话）</strong>：你和 AI 开启的一个独立聊天窗口或任务档案。</li>
+                <li><strong>Context（上下文）</strong>：AI 当前脑子里记住的“短期记忆”（包含你发的话、它读过的文件内容等）。</li>
+                <li><strong>Turn（轮次）与 Step（步骤）</strong>：你发一句话、AI 最终回复你结果，这叫一个 <strong>Turn（回合）</strong>；在这一个回合里，AI 先后执行了“查看目录 → 读取文件 → 修改代码 → 运行测试”这 4 个动作，每个动作就叫一个 <strong>Step（步骤）</strong>。</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>❓ 提问：我是纯 Windows 用户，能用 DSH 吗？</summary>
+            <div class="faq-content">
+              <p>
+                <strong>完全可以！</strong> 基础的 DSH 与 Web UI（即 <code>npx @deepseek-ai/dsh web</code>）在 Windows、macOS、Linux 上都能直接丝滑运行。如果你想要体验进阶的 <code>dsh-superagent</code> 多专员后台并行能力，因为在底层用到了 <code>tmux</code> 分屏工具，Windows 用户只需开启系统自带的 <strong>WSL2（适用于 Linux 的 Windows 子系统）</strong> 即可完美运行。
+              </p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>❓ 提问：使用 DSH 软件本身收费吗？</summary>
+            <div class="faq-content">
+              <p>
+                <strong>DSH 与 SuperAgent 框架本身是 100% 免费开源的！</strong> 你唯一需要消耗的是大模型思考时的 API Token 费用（比如接入 DeepSeek 官方 API，价格极其便宜，平时做实验跑任务通常只需几分到几毛钱）。同时 DSH 内置了 <code>Token-meter</code>（Token 计价器插件），让你对每一分钱的消耗都清清楚楚。
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>基于 Bilibili 视频 <strong>《【全网最全】DeepSeek Harness超详细教程！50分钟吃透DSH，让SuperAgent给你干活！》(BV1REx46NEc4)</strong> 整理制作</p>
+    <p style="margin-top: 0.4rem;">响应式双端适配（PC 宽屏 &amp; 手机端自适应防错位排版）· 支持一键代码复制与深浅色护眼切换</p>
+  </footer>
+
+  <!-- Interactive Scripts -->
+  <script>
+    // 1. Theme Toggle (Dark / Light Mode)
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const themeText = document.getElementById('themeText');
+    const htmlEl = document.documentElement;
+
+    function updateThemeUI(theme) {
+      if (theme === 'light') {
+        themeIcon.textContent = '🌙';
+        themeText.textContent = '深色';
+      } else {
+        themeIcon.textContent = '☀️';
+        themeText.textContent = '浅色';
+      }
+    }
+
+    const savedTheme = localStorage.getItem('dsh_tutorial_theme') || 'dark';
+    htmlEl.setAttribute('data-theme', savedTheme);
+    updateThemeUI(savedTheme);
+
+    themeToggleBtn.addEventListener('click', () => {
+      const current = htmlEl.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', next);
+      localStorage.setItem('dsh_tutorial_theme', next);
+      updateThemeUI(next);
+    });
+
+    // 2. Mobile Drawer Navigation
+    const mobileTocBtn = document.getElementById('mobileTocBtn');
+    const sidebarNav = document.getElementById('sidebarNav');
+    const backdropOverlay = document.getElementById('backdropOverlay');
+    const tocLinks = document.querySelectorAll('.toc-link');
+
+    function closeMobileDrawer() {
+      sidebarNav.classList.remove('open');
+      backdropOverlay.classList.remove('open');
+    }
+
+    mobileTocBtn.addEventListener('click', () => {
+      sidebarNav.classList.toggle('open');
+      backdropOverlay.classList.toggle('open');
+    });
+
+    backdropOverlay.addEventListener('click', closeMobileDrawer);
+    tocLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 980) {
+          closeMobileDrawer();
+        }
+      });
+    });
+
+    // 3. Copy Code Button
+    function copyCode(btn) {
+      const wrapper = btn.closest('.code-wrapper');
+      const codeEl = wrapper.querySelector('pre code');
+      if (!codeEl) return;
+      const text = codeEl.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = '✅ 已复制';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 1800);
+      });
+    }
+
+    // 4. Scroll Spy & Reading Progress Bar
+    const progressEl = document.getElementById('readingProgress');
+    const sections = document.querySelectorAll('.chapter-card');
+
+    window.addEventListener('scroll', () => {
+      // Progress bar
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      progressEl.style.width = progress + '%';
+
+      // Active TOC item
+      let currentId = 'ch0';
+      sections.forEach(sec => {
+        const top = sec.offsetTop - 130;
+        if (scrollTop >= top) {
+          currentId = sec.getAttribute('id');
+        }
+      });
+
+      tocLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + currentId);
+      });
+    }, { passive: true });
+  </script>
+</body>
+</html>
